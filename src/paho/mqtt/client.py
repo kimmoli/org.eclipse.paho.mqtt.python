@@ -39,6 +39,10 @@ try:
     import dns.resolver
 except ImportError:
     HAVE_DNS = False
+from ctypes import *
+iphb = CDLL("libiphb.so.0.0.0")
+hb = iphb.iphb_open()
+hbsock = iphb.iphb_get_fd(hb);
 
 if platform.system() == 'Windows':
     EAGAIN = errno.WSAEWOULDBLOCK
@@ -781,12 +785,16 @@ class Client(object):
 
         # sockpairR is used to break out of select() before the timeout, on a
         # call to publish() etc.
-        rlist = [self.socket(), self._sockpairR]
+        # hbsock is used to break out of select() after a fixed timeout of 10s 
+        # is reached.
+        rlist = [self.socket(), self._sockpairR, hbsock]
+        iphb.iphb_wait(hb, 10, 10, 0)
         try:
             socklist = select.select(rlist, wlist, [], timeout)
         except TypeError:
             # Socket isn't correct type, in likelihood connection is lost
             return MQTT_ERR_CONN_LOST
+        iphb.iphb_discard_wakeups(hb)
 
         if self.socket() in socklist[0]:
             rc = self.loop_read(max_packets)
