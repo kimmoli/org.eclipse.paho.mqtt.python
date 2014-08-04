@@ -788,7 +788,7 @@ class Client(object):
         # hbsock is used to break out of select() after a fixed timeout of 10s 
         # is reached.
         rlist = [self.socket(), self._sockpairR, hbsock]
-        iphb.iphb_wait(hb, 10, 10, 0)
+        iphb.iphb_wait(hb, 30, 30, 0)
         try:
             socklist = select.select(rlist, wlist, [], timeout)
         except TypeError:
